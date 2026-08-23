@@ -1,3 +1,4 @@
+// Package speach — подключение к SaluteSpeech API и управление токенами авторизации.
 package speach
 
 import (
@@ -14,17 +15,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// SpeachConnection - структура подключения к speach.
+// SpeachConnection — структура подключения к SaluteSpeech API.
+// Управляет токеном авторизации и автоматически обновляет его до истечения.
 type SpeachConnection struct {
-	host    string
-	RqUID   string
-	AuthKey string
+	host    string // хост API
+	RqUID   string // RQ UID для авторизации
+	AuthKey string // ключ авторизации (Base64)
 
-	token string
-	err   error
+	token string // текущий токен авторизации
+	err   error  // последняя ошибка
 }
 
-// New - создание подключения к  speach.
+// New создает новое подключение к SaluteSpeech API.
+// host — хост API, rquid — RQ UID, authkey — ключ авторизации.
 func New(host string, rquid string, authkey string) *SpeachConnection {
 	return &SpeachConnection{
 		host:    host,
@@ -33,13 +36,14 @@ func New(host string, rquid string, authkey string) *SpeachConnection {
 	}
 }
 
-// SpeachAuthResponse - возвращаемый токен.
+// SpeachAuthResponse — ответ API с токеном авторизации.
 type SpeachAuthResponse struct {
-	Token   string `json:"access_token"`
-	Expires int64  `json:"expires_at"`
+	Token   string `json:"access_token"` // токен доступа
+	Expires int64  `json:"expires_at"`   // время истечения (Unix timestamp)
 }
 
-// Connect - создает токен.
+// Connect запрашивает токен авторизации у SaluteSpeech API.
+// Устанавливает токен и планирует автоматическое обновление до истечения.
 func (p *SpeachConnection) Connect(ctx context.Context) error {
 	u, err := url.JoinPath(p.host, "/api/v2/oauth")
 	if err != nil {
@@ -97,7 +101,8 @@ func (p *SpeachConnection) Connect(ctx context.Context) error {
 	return nil
 }
 
-// GetToken - возвращает токен, проверяет на ошибку получения токена.
+// GetToken возвращает текущий токен авторизации.
+// Если была ошибка при получении токена, возвращает ошибку.
 func (p *SpeachConnection) GetToken() (string, error) {
 	if p.err != nil {
 		return "", p.err

@@ -1,3 +1,4 @@
+// Package speachservice — сервис для распознавания речи (SaluteSpeech).
 package speachservice
 
 import (
@@ -8,26 +9,33 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// SpeachService — сервис для обработки задач распознавания речи.
+// Управляет очередью задач и воркерами для их выполнения.
 type SpeachService struct {
-	*speachOption
-	chTaskRequest  chan *model.SpeachTaskData
-	chTaskResponse chan *model.SpeachTaskResponse
+	*speachOption         // параметры конфигурации
+	chTaskRequest  chan *model.SpeachTaskData // входящая очередь задач
+	chTaskResponse chan *model.SpeachTaskResponse // исходящая очередь результатов
 }
 
+// New создает новый экземпляр SpeachService с указанными опциями.
 func New(opts ...Option) *SpeachService {
 	return &SpeachService{
 		speachOption: newSpeachOption(opts...),
 	}
 }
 
+// AddTask добавляет задачу на распознавание в очередь.
 func (p *SpeachService) AddTask(x *model.SpeachTaskData) {
 	p.chTaskRequest <- x
 }
 
+// GetTaskResponse возвращает канал для получения результатов задач.
 func (p *SpeachService) GetTaskResponse() chan *model.SpeachTaskResponse {
 	return p.chTaskResponse
 }
 
+// Start запускает воркеры обработки задач.
+// cnt — количество воркеров, size — размер очередей.
 func (p *SpeachService) Start(ctx context.Context, cnt, size int) error {
 	p.chTaskRequest = make(chan *model.SpeachTaskData, size)
 	p.chTaskResponse = make(chan *model.SpeachTaskResponse, size)
@@ -42,6 +50,8 @@ func (p *SpeachService) Start(ctx context.Context, cnt, size int) error {
 	return wg.Wait()
 }
 
+// Worker — воркер обработки задач распознавания речи.
+// Читает задачи из входящей очереди, обрабатывает и отправляет результаты в исходящую очередь.
 func (p *SpeachService) Worker(ctx context.Context) error {
 	for {
 		select {

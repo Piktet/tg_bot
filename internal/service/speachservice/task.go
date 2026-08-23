@@ -1,3 +1,4 @@
+// Package speachservice — обработка одной задачи распознавания речи.
 package speachservice
 
 import (
@@ -9,20 +10,25 @@ import (
 	"github.com/Piktet/tg_bot/internal/repository/speach"
 )
 
+// SpeachTask — задача распознавания речи.
+// Выполняет полный цикл: загрузка аудио, создание задачи, мониторинг статуса, скачивание результата.
 type SpeachTask struct {
-	*speachOption
-	token     string
-	inFileID  string
-	outFileID string
-	taskID    string
+	*speachOption // параметры конфигурации
+	token     string // токен авторизации
+	inFileID  string // ID загруженного входного файла
+	outFileID string // ID файла с результатом
+	taskID    string // ID задачи в SaluteSpeech
 }
 
+// NewTask создает новую задачу распознавания речи.
 func NewTask(opt *speachOption) *SpeachTask {
 	return &SpeachTask{
 		speachOption: opt,
 	}
 }
 
+// Process выполняет полный цикл обработки задачи распознавания речи.
+// Загружает аудио, создает задачу, ожидает завершения, скачивает результат.
 func (p *SpeachTask) Process(ctx context.Context, task *model.SpeachTaskData) (*model.SpeachTaskResponse, error) {
 	token, err := p.connSpeach.GetToken()
 	if err != nil {
@@ -71,6 +77,7 @@ func (p *SpeachTask) Process(ctx context.Context, task *model.SpeachTaskData) (*
 	}, nil
 }
 
+// checkSpeachStatus — мониторинг статуса задачи с периодической проверкой.
 func (p *SpeachTask) checkSpeachStatus(ctx context.Context) error {
 	t := time.NewTicker(p.statusTimeout)
 	defer t.Stop()
@@ -97,6 +104,8 @@ func (p *SpeachTask) checkSpeachStatus(ctx context.Context) error {
 	}
 }
 
+// checkSpeachStatus — проверка статуса задачи распознавания.
+// Возвращает (needRetry, error): needRetry = true означает, что нужно продолжать опрос.
 func checkSpeachStatus(x model.ResultStatusType) (bool, error) {
 	switch x {
 	case model.SpeachResultStatusCanceled:

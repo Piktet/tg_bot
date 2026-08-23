@@ -1,4 +1,4 @@
-// Package logger логирование
+// Package logger — логирование с использованием zap.
 package logger
 
 import (
@@ -7,12 +7,15 @@ import (
 
 var log *zap.Logger = zap.NewNop()
 
-// Log возвращает экземпляр логера.
+// Log возвращает экземпляр глобального логера.
+// Возвращает zap.NewNop() если InitLogger ещё не был вызван.
 func Log() *zap.Logger {
 	return log
 }
 
-// InitLogger создание логера.
+// InitLogger инициализирует глобальный логер с указанным уровнем.
+// Принимает текстовый уровень логирования (например, "DEBUG", "INFO", "WARN", "ERROR").
+// Возвращает ошибку, если указанный уровень невалиден.
 func InitLogger(level string) error {
 	// преобразуем текстовый уровень логирования в zap.AtomicLevel
 	lvl, err := zap.ParseAtomicLevel(level)

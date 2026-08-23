@@ -1,3 +1,4 @@
+// Package speach — взаимодействие с SaluteSpeech API (загрузка файлов, создание задач, проверка статуса, скачивание результатов).
 package speach
 
 import (
@@ -15,7 +16,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// Voice - загрузить файл для отправки в SaluteSpeech API.
+// Upload загружает аудиофайл в SaluteSpeech API.
+// host — хост API, token — токен авторизации, data — поток аудио данных.
+// Возвращает ID загруженного файла.
 func Upload(ctx context.Context, host, token string, data io.Reader) (string, error) {
 	u, err := url.JoinPath(host, "/rest/v1/data:upload")
 	if err != nil {
@@ -62,7 +65,9 @@ func Upload(ctx context.Context, host, token string, data io.Reader) (string, er
 
 }
 
-// Audio - загрузить файл для отправки в SaluteSpeech API.
+// CreateTask создает задачу на распознавание речи в SaluteSpeech API.
+// host — хост API, token — токен авторизации, fileID — ID загруженного аудиофайла.
+// Возвращает ID задачи, ID выходного файла, статус и ошибку.
 func CreateTask(ctx context.Context, host, token, fileID string) (string, string, model.ResultStatusType, error) {
 	u, err := url.JoinPath(host, "rest/v1/speech:async_recognize")
 	if err != nil {
@@ -103,7 +108,10 @@ func CreateTask(ctx context.Context, host, token, fileID string) (string, string
 
 }
 
-// Audio - загрузить файл для отправки в SaluteSpeech API. bool = retry
+// GetStatus запрашивает статус задачи распознавания речи.
+// host — хост API, token — токен авторизации, taskID — ID задачи.
+// Возвращает ID выходного файла, статус задачи, флаг необходимости повтора и ошибку.
+// isRetry = true означает, что запрос стоит повторить (например, при 500 ошибке).
 func GetStatus(ctx context.Context, host, token, taskID string) (string, model.ResultStatusType, bool, error) {
 
 	u, err := url.JoinPath(host, "/rest/v1/task:get", taskID)
@@ -149,7 +157,8 @@ func GetStatus(ctx context.Context, host, token, taskID string) (string, model.R
 
 }
 
-// Audio - загрузить файл для отправки в SaluteSpeech API.
+// Download скачивает результат распознавания по ID файла.
+// host — хост API, token — токен авторизации, fileID — ID файла с результатом.
 func Download(ctx context.Context, host, token, fileID string) ([]byte, error) {
 
 	u, err := url.JoinPath(host, "rest/v1/data:download")
@@ -194,6 +203,7 @@ func Download(ctx context.Context, host, token, fileID string) ([]byte, error) {
 	return x, nil
 }
 
+// parseStatus парсит ответ API задачи распознавания.
 func parseStatus(body io.Reader) (string, string, model.ResultStatusType, error) {
 
 	var x model.SpeachCreateTaskResponse
